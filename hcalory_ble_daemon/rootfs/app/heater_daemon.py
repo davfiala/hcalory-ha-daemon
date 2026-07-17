@@ -31,6 +31,15 @@ logging.basicConfig(
 
 
 COMMAND_HEADER = bytes.fromhex("000200010001000e040000090000000000000000")
+HCALORY_CMD_SET_GEAR = 0x0607
+HCALORY_CMD_SET_TEMP = 0x0706
+HCALORY_CMD_POWER = 0x0E04
+HCALORY_POWER_AUTO_TOGGLE = 0x05
+HCALORY_POWER_MODE_TEMP = 0x06
+HCALORY_POWER_MODE_LEVEL = 0x07
+HCALORY_POWER_CELSIUS = 0x0A
+HCALORY_POWER_FAHRENHEIT = 0x0B
+HCALORY_ALTITUDE_TOGGLE = 0x09
 DEFAULT_SOCKET_DIR = "/var/lib/homeassistant/homeassistant/hcalory"
 DEFAULT_READ_TIMEOUT = 5.0
 DEFAULT_SCAN_TIMEOUT = 5.0
@@ -51,6 +60,18 @@ class Command(bytes, ListableEnum):
     thermostat = COMMAND_HEADER + bytes.fromhex("0613")
     pump_data = COMMAND_HEADER + bytes.fromhex("000d")
     ventilation = COMMAND_HEADER + bytes.fromhex("0815")
+
+
+def build_hcalory_command(cmd_type: int, payload: bytes) -> bytes:
+    cmd_hi = (cmd_type >> 8) & 0xFF
+    cmd_lo = cmd_type & 0xFF
+    payload_for_checksum = bytes([cmd_lo, 0x00, 0x00, len(payload)]) + payload
+    checksum = sum(payload_for_checksum) & 0xFF
+    return bytes([0x00, 0x02, 0x00, 0x01, 0x00, 0x01, 0x00, cmd_hi]) + payload_for_checksum + bytes([checksum])
+
+
+def build_hcalory_power_action(action: int) -> bytes:
+    return build_hcalory_command(HCALORY_CMD_POWER, bytes([0, 0, 0, 0, 0, 0, 0, 0, action]))
 
 
 class SocketCommand(str, enum.Enum):
@@ -507,11 +528,33 @@ class HCaloryHeater:
             raise ValueError("Raw command id must be in range 00..FF")
 
         cmd = COMMAND_HEADER + bytes([cmd_id, (cmd_id + 0x0D) & 0xFF])
+        await self.send_packet(f"raw {cmd_id:02X}", cmd)
+
+    async def send_packet(self, name: str, packet: bytes) -> None:
         async with self._command_lock:
-            await self._ensure_connection(f"(raw {cmd_id:02X})")
+            await self._ensure_connection(f"(send {name})")
             assert self.bleak_client is not None
-            logger.info("TX RAW %02X -> %s", cmd_id, cmd.hex(" "))
-            await self.bleak_client.write_gatt_char(self.write_characteristic, cmd)
+            logger.info("TX %-12s %s", name, packet.hex(" "))
+            await self.bleak_client.write_gatt_char(self.write_characteristic, packet)
+
+    async def send_experimental_set_gear(self, level: int) -> None:
+        if not 1 <= level <= 10:
+            raise ValueError("Gear level must be in range 1..10")
+        await self.send_packet("hcalory_gear", build_hcalory_command(HCALORY_CMD_SET_GEAR, bytes([level])))
+
+    async def send_experimental_set_temperature(self, temperature: int, unit: int | None = None) -> None:
+        if unit is None:
+            unit = self.heater_response.temperature_unit_raw if self.heater_response else 0
+        if unit == 0 and not 0 <= temperature <= 40:
+            raise ValueError("Celsius temperature must be in range 0..40")
+        if unit == 1 and not 32 <= temperature <= 104:
+            raise ValueError("Fahrenheit temperature must be in range 32..104")
+        if unit not in (0, 1):
+            raise ValueError("Temperature unit must be 0/celsius or 1/fahrenheit")
+        await self.send_packet("hcalory_temp", build_hcalory_command(HCALORY_CMD_SET_TEMP, bytes([temperature, unit])))
+
+    async def send_experimental_power_action(self, name: str, action: int) -> None:
+        await self.send_packet(name, build_hcalory_power_action(action))
 
     async def start_heat(self) -> None:
         await self.send_command(Command.start_heat)
@@ -573,6 +616,15 @@ def socket_path_for_address(address: str, socket_dir: str = DEFAULT_SOCKET_DIR) 
 
 def json_line(payload: dict[str, Any]) -> bytes:
     return (json.dumps(payload, sort_keys=True) + "\n").encode()
+
+
+def parse_temperature_unit(value: str) -> int:
+    normalized = value.strip().lower()
+    if normalized in ("0", "c", "celsius"):
+        return 0
+    if normalized in ("1", "f", "fahrenheit"):
+        return 1
+    raise ValueError("Temperature unit must be celsius or fahrenheit")
 
 
 async def run_daemon(
@@ -700,6 +752,57 @@ async def run_daemon(
                 value = int(cmd.split(maxsplit=1)[1], 16)
                 await heater.send_raw_command(value)
                 await write_response(writer, f"OK: raw {value:02X}\n".encode())
+                return
+
+            parts = cmd.split()
+            experimental_cmd = parts[0].lower() if parts else ""
+
+            if experimental_cmd == "hcalory_set_gear":
+                if len(parts) != 2:
+                    raise ValueError("Usage: hcalory_set_gear <1..10>")
+                level = int(parts[1], 10)
+                await heater.send_experimental_set_gear(level)
+                await write_response(writer, f"OK: hcalory_set_gear {level}\n".encode())
+                return
+
+            if experimental_cmd == "hcalory_set_temp":
+                if len(parts) not in (2, 3):
+                    raise ValueError("Usage: hcalory_set_temp <temperature> [celsius|fahrenheit]")
+                temperature = int(parts[1], 10)
+                unit = parse_temperature_unit(parts[2]) if len(parts) == 3 else None
+                await heater.send_experimental_set_temperature(temperature, unit)
+                await write_response(writer, f"OK: hcalory_set_temp {temperature}\n".encode())
+                return
+
+            if experimental_cmd == "hcalory_set_unit":
+                if len(parts) != 2:
+                    raise ValueError("Usage: hcalory_set_unit <celsius|fahrenheit>")
+                unit = parse_temperature_unit(parts[1])
+                action = HCALORY_POWER_FAHRENHEIT if unit == 1 else HCALORY_POWER_CELSIUS
+                await heater.send_experimental_power_action("hcalory_unit", action)
+                await write_response(writer, f"OK: hcalory_set_unit {parts[1].lower()}\n".encode())
+                return
+
+            if experimental_cmd == "hcalory_set_mode":
+                if len(parts) != 2 or parts[1].lower() not in ("gear", "thermostat"):
+                    raise ValueError("Usage: hcalory_set_mode <gear|thermostat>")
+                action = HCALORY_POWER_MODE_TEMP if parts[1].lower() == "thermostat" else HCALORY_POWER_MODE_LEVEL
+                await heater.send_experimental_power_action("hcalory_mode", action)
+                await write_response(writer, f"OK: hcalory_set_mode {parts[1].lower()}\n".encode())
+                return
+
+            if experimental_cmd == "hcalory_auto_toggle":
+                if len(parts) != 1:
+                    raise ValueError("Usage: hcalory_auto_toggle")
+                await heater.send_experimental_power_action("hcalory_auto", HCALORY_POWER_AUTO_TOGGLE)
+                await write_response(writer, b"OK: hcalory_auto_toggle\n")
+                return
+
+            if experimental_cmd == "hcalory_altitude_toggle":
+                if len(parts) != 1:
+                    raise ValueError("Usage: hcalory_altitude_toggle")
+                await heater.send_experimental_power_action("hcalory_alt", HCALORY_ALTITUDE_TOGGLE)
+                await write_response(writer, b"OK: hcalory_altitude_toggle\n")
                 return
 
             func = command_mapping.get(cmd)

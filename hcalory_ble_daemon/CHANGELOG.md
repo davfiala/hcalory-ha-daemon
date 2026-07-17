@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.8
+
+- Add experimental Hcalory socket commands for direct gear, temperature, unit, mode, auto start/stop, and altitude toggles.
+- Keep existing stable command names unchanged.
+
 ## 0.1.7
 
 - Extend `pump_data` parsing with Hcalory status nibbles, running step, temperature unit, auto start/stop, and error code fields.

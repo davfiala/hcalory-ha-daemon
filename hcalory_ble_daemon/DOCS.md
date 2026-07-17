@@ -90,6 +90,25 @@ The add-on needs access to the host Bluetooth stack through D-Bus and network
 capabilities. This is why the add-on requests `host_dbus`, `NET_ADMIN`, and
 `NET_RAW`.
 
+## Experimental socket commands
+
+The daemon also accepts a few experimental Hcalory-specific commands. They use
+the same UNIX socket as the stable commands and are intended for manual testing
+before they become normal Home Assistant entities.
+
+```text
+hcalory_set_gear <1..10>
+hcalory_set_temp <0..40> [celsius]
+hcalory_set_temp <32..104> fahrenheit
+hcalory_set_unit <celsius|fahrenheit>
+hcalory_set_mode <gear|thermostat>
+hcalory_auto_toggle
+hcalory_altitude_toggle
+```
+
+The existing stable commands such as `start_heat`, `stop_heat`, `up`, `down`,
+`gear`, `thermostat`, and `ventilation` are unchanged.
+
 ## Troubleshooting
 
 ### The add-on starts, but the integration has no data
