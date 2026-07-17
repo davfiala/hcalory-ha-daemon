@@ -104,6 +104,8 @@ hcalory_set_unit <celsius|fahrenheit>
 hcalory_set_mode <gear|thermostat>
 hcalory_auto_toggle
 hcalory_altitude_toggle
+hcalory_query_altitude
+hcalory_set_altitude <meters>
 ```
 
 The existing stable commands such as `start_heat`, `stop_heat`, `up`, `down`,

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.9
+
+- Add experimental altitude query and set-altitude socket commands.
+- Expose the raw high-altitude mode byte from `pump_data`.
+
 ## 0.1.8
 
 - Add experimental Hcalory socket commands for direct gear, temperature, unit, mode, auto start/stop, and altitude toggles.

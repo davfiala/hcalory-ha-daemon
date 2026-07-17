@@ -33,6 +33,7 @@ logging.basicConfig(
 COMMAND_HEADER = bytes.fromhex("000200010001000e040000090000000000000000")
 HCALORY_CMD_SET_GEAR = 0x0607
 HCALORY_CMD_SET_TEMP = 0x0706
+HCALORY_CMD_SET_ALTITUDE = 0x0909
 HCALORY_CMD_POWER = 0x0E04
 HCALORY_POWER_AUTO_TOGGLE = 0x05
 HCALORY_POWER_MODE_TEMP = 0x06
@@ -40,6 +41,7 @@ HCALORY_POWER_MODE_LEVEL = 0x07
 HCALORY_POWER_CELSIUS = 0x0A
 HCALORY_POWER_FAHRENHEIT = 0x0B
 HCALORY_ALTITUDE_TOGGLE = 0x09
+HCALORY_QUERY_ALTITUDE = 0x0D
 DEFAULT_SOCKET_DIR = "/var/lib/homeassistant/homeassistant/hcalory"
 DEFAULT_READ_TIMEOUT = 5.0
 DEFAULT_SCAN_TIMEOUT = 5.0
@@ -154,6 +156,7 @@ class HeaterResponse:
         self._voltage = raw[25] if len(raw) > 25 else None
         self._body_temperature = raw[27:29]
         self._ambient_temperature = raw[30:32]
+        self.high_altitude_raw = raw[18] if len(raw) > 18 else None
         self.temperature_unit_raw = raw[37] if len(raw) > 37 else None
         self._hcalory_status_raw = None if self.heater_state_raw is None else (self.heater_state_raw & 0xF0) >> 4
         self._hcalory_running_step_raw = None if self.heater_state_raw is None else self.heater_state_raw & 0x0F
@@ -283,6 +286,7 @@ class HeaterResponse:
             "heater_setting": self.heater_setting,
             "auto_start_stop": self.auto_start_stop,
             "auto_start_stop_raw": self.auto_start_stop_raw,
+            "high_altitude_raw": self.high_altitude_raw,
             "temperature_unit": self.temperature_unit,
             "temperature_unit_raw": self.temperature_unit_raw,
             "error_code": self.error_code,
@@ -556,6 +560,14 @@ class HCaloryHeater:
     async def send_experimental_power_action(self, name: str, action: int) -> None:
         await self.send_packet(name, build_hcalory_power_action(action))
 
+    async def send_experimental_set_altitude(self, meters: int) -> None:
+        if not -500 <= meters <= 9000:
+            raise ValueError("Altitude must be in range -500..9000 meters")
+        sign = 0x00 if meters >= 0 else 0x01
+        altitude = abs(meters)
+        payload = bytes([sign, (altitude >> 8) & 0xFF, altitude & 0xFF, 0x00])
+        await self.send_packet("hcalory_alt", build_hcalory_command(HCALORY_CMD_SET_ALTITUDE, payload))
+
     async def start_heat(self) -> None:
         await self.send_command(Command.start_heat)
 
@@ -803,6 +815,21 @@ async def run_daemon(
                     raise ValueError("Usage: hcalory_altitude_toggle")
                 await heater.send_experimental_power_action("hcalory_alt", HCALORY_ALTITUDE_TOGGLE)
                 await write_response(writer, b"OK: hcalory_altitude_toggle\n")
+                return
+
+            if experimental_cmd == "hcalory_query_altitude":
+                if len(parts) != 1:
+                    raise ValueError("Usage: hcalory_query_altitude")
+                await heater.send_experimental_power_action("hcalory_alt_query", HCALORY_QUERY_ALTITUDE)
+                await write_response(writer, b"OK: hcalory_query_altitude\n")
+                return
+
+            if experimental_cmd == "hcalory_set_altitude":
+                if len(parts) != 2:
+                    raise ValueError("Usage: hcalory_set_altitude <meters>")
+                meters = int(parts[1], 10)
+                await heater.send_experimental_set_altitude(meters)
+                await write_response(writer, f"OK: hcalory_set_altitude {meters}\n".encode())
                 return
 
             func = command_mapping.get(cmd)
