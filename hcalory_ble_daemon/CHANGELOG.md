@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.7
+
+- Extend `pump_data` parsing with Hcalory status nibbles, running step, temperature unit, auto start/stop, and error code fields.
+- Derive running, cooldown, and preheating flags from the decoded Hcalory status where available.
+
 ## 0.1.6
 
 - Expand add-on documentation with setup steps, socket path guidance, and troubleshooting notes.

@@ -86,6 +86,29 @@ class HeaterMode(int, ListableEnum):
     unknown = 92
 
 
+HCALORY_STATUS_NAMES = {
+    0x0: "off",
+    0x4: "turning_off",
+    0x8: "heating",
+    0xC: "ventilation",
+    0xF: "error",
+}
+
+HCALORY_RUNNING_STEP_NAMES = {
+    0x0: "inactive",
+    0x1: "fan",
+    0x3: "ignition",
+    0x4: "cooldown",
+    0x5: "running",
+    0x7: "standby",
+}
+
+TEMPERATURE_UNIT_NAMES = {
+    0: "celsius",
+    1: "fahrenheit",
+}
+
+
 def enum_name(value: enum.Enum | None) -> str | None:
     return value.name if value is not None else None
 
@@ -106,27 +129,41 @@ class HeaterResponse:
         self.heater_mode_raw = raw[21] if len(raw) > 21 else None
         self.heater_setting = raw[22] if len(raw) > 22 else None
         self.mystery = raw[23] if len(raw) > 23 else None
+        self.auto_start_stop_raw = raw[23] if len(raw) > 23 else None
         self._voltage = raw[25] if len(raw) > 25 else None
         self._body_temperature = raw[27:29]
         self._ambient_temperature = raw[30:32]
+        self.temperature_unit_raw = raw[37] if len(raw) > 37 else None
+        self._hcalory_status_raw = None if self.heater_state_raw is None else (self.heater_state_raw & 0xF0) >> 4
+        self._hcalory_running_step_raw = None if self.heater_state_raw is None else self.heater_state_raw & 0x0F
 
-        self.heater_state = self._parse_enum(HeaterState, self.heater_state_raw)
+        self.heater_state = self._parse_enum(
+            HeaterState,
+            self.heater_state_raw,
+            warn_unknown=self._hcalory_status_raw not in HCALORY_STATUS_NAMES,
+        )
         self.heater_mode = self._parse_enum(HeaterMode, self.heater_mode_raw)
 
     @staticmethod
-    def _parse_enum(enum_type: type[enum.Enum], value: int | None) -> enum.Enum | None:
+    def _parse_enum(
+        enum_type: type[enum.Enum],
+        value: int | None,
+        *,
+        warn_unknown: bool = True,
+    ) -> enum.Enum | None:
         if value is None:
             return None
         try:
             return enum_type(value)
         except ValueError:
-            logger.warning("Unknown %s value: %s", enum_type.__name__, value)
+            if warn_unknown:
+                logger.warning("Unknown %s value: %s", enum_type.__name__, value)
             return None
 
     @property
     def valid(self) -> bool:
         return (
-            self.heater_state is not None
+            (self.heater_state is not None or self.hcalory_status_raw in HCALORY_STATUS_NAMES)
             and self.heater_mode is not None
             and self.voltage is not None
             and self.body_temperature is not None
@@ -146,8 +183,47 @@ class HeaterResponse:
         return read_u16_tenths(self._ambient_temperature)
 
     @property
+    def hcalory_status_raw(self) -> int | None:
+        return self._hcalory_status_raw
+
+    @property
+    def hcalory_status(self) -> str | None:
+        raw = self.hcalory_status_raw
+        return None if raw is None else HCALORY_STATUS_NAMES.get(raw, f"unknown_{raw}")
+
+    @property
+    def hcalory_running_step_raw(self) -> int | None:
+        return self._hcalory_running_step_raw
+
+    @property
+    def hcalory_running_step(self) -> str | None:
+        raw = self.hcalory_running_step_raw
+        return None if raw is None else HCALORY_RUNNING_STEP_NAMES.get(raw, f"unknown_{raw}")
+
+    @property
+    def temperature_unit(self) -> str | None:
+        raw = self.temperature_unit_raw
+        return None if raw is None else TEMPERATURE_UNIT_NAMES.get(raw, f"unknown_{raw}")
+
+    @property
+    def auto_start_stop(self) -> bool | None:
+        if self.auto_start_stop_raw == 1:
+            return True
+        if self.auto_start_stop_raw == 2:
+            return False
+        return None
+
+    @property
+    def error_code(self) -> int:
+        if self.hcalory_status_raw == 0xF:
+            return self.heater_setting or 0
+        if self.heater_state in (HeaterState.error26, HeaterState.error255):
+            return self.heater_state_raw or 0
+        return 0
+
+    @property
     def cooldown(self) -> bool:
-        return self.heater_state in (
+        return self.hcalory_status_raw == 0x4 or self.heater_state in (
             HeaterState.cooldown_received,
             HeaterState.cooldown_starting,
             HeaterState.cooldown,
@@ -155,7 +231,7 @@ class HeaterResponse:
 
     @property
     def preheating(self) -> bool:
-        return self.heater_state in (
+        return self.hcalory_running_step_raw == 0x3 or self.heater_state in (
             HeaterState.ignition_received,
             HeaterState.ignition_starting,
             HeaterState.igniting,
@@ -164,7 +240,7 @@ class HeaterResponse:
 
     @property
     def running(self) -> bool:
-        return self.heater_state in (
+        return self.hcalory_status_raw == 0x8 or self.heater_state in (
             HeaterState.ignition_received,
             HeaterState.ignition_starting,
             HeaterState.igniting,
@@ -177,9 +253,18 @@ class HeaterResponse:
             "valid": self.valid,
             "heater_state": enum_name(self.heater_state),
             "heater_state_raw": self.heater_state_raw,
+            "hcalory_status": self.hcalory_status,
+            "hcalory_status_raw": self.hcalory_status_raw,
+            "hcalory_running_step": self.hcalory_running_step,
+            "hcalory_running_step_raw": self.hcalory_running_step_raw,
             "heater_mode": enum_name(self.heater_mode),
             "heater_mode_raw": self.heater_mode_raw,
             "heater_setting": self.heater_setting,
+            "auto_start_stop": self.auto_start_stop,
+            "auto_start_stop_raw": self.auto_start_stop_raw,
+            "temperature_unit": self.temperature_unit,
+            "temperature_unit_raw": self.temperature_unit_raw,
+            "error_code": self.error_code,
             "voltage": self.voltage,
             "body_temperature": self.body_temperature,
             "ambient_temperature": self.ambient_temperature,
