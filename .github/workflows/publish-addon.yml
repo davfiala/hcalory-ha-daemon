@@ -50,7 +50,7 @@ jobs:
         with:
           context: ./hcalory_ble_daemon
           file: ./hcalory_ble_daemon/Dockerfile
-          platforms: linux/amd64,linux/386,linux/arm64,linux/arm/v7
+          platforms: linux/amd64,linux/arm64
           push: true
           build-args: |
             BUILD_VERSION=${{ steps.addon.outputs.version }}
@@ -60,7 +60,7 @@ jobs:
             io.hass.description=Persistent BLE daemon for HCalory diesel heaters
             io.hass.type=addon
             io.hass.version=${{ steps.addon.outputs.version }}
-            io.hass.arch=amd64|i386|aarch64|armv7
+            io.hass.arch=amd64|aarch64
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
             org.opencontainers.image.licenses=LGPL-3.0-or-later
           tags: |

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5
+
+- Limit pre-built GHCR image publishing to `amd64` and `aarch64`, matching the available Home Assistant base image platforms.
+
 ## 0.1.4
 
 - Remove unsupported `armhf`/`linux/arm/v6` image build target from GHCR publishing.
