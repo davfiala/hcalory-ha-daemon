@@ -40,7 +40,8 @@ HCALORY_POWER_MODE_TEMP = 0x06
 HCALORY_POWER_MODE_LEVEL = 0x07
 HCALORY_POWER_CELSIUS = 0x0A
 HCALORY_POWER_FAHRENHEIT = 0x0B
-HCALORY_ALTITUDE_TOGGLE = 0x09
+HCALORY_POWER_HIGHLAND_TOGGLE = 0x09
+HCALORY_ALTITUDE_TOGGLE = HCALORY_POWER_HIGHLAND_TOGGLE
 HCALORY_QUERY_ALTITUDE = 0x0D
 DEFAULT_SOCKET_DIR = "/var/lib/homeassistant/homeassistant/hcalory"
 DEFAULT_READ_TIMEOUT = 5.0
@@ -156,7 +157,8 @@ class HeaterResponse:
         self._voltage = raw[25] if len(raw) > 25 else None
         self._body_temperature = raw[27:29]
         self._ambient_temperature = raw[30:32]
-        self.high_altitude_raw = raw[18] if len(raw) > 18 else None
+        self.highland_mode_raw = raw[36] if len(raw) > 36 else None
+        self.high_altitude_raw = self.highland_mode_raw
         self.temperature_unit_raw = raw[37] if len(raw) > 37 else None
         self._hcalory_status_raw = None if self.heater_state_raw is None else (self.heater_state_raw & 0xF0) >> 4
         self._hcalory_running_step_raw = None if self.heater_state_raw is None else self.heater_state_raw & 0x0F
@@ -230,6 +232,14 @@ class HeaterResponse:
         return None if raw is None else TEMPERATURE_UNIT_NAMES.get(raw, f"unknown_{raw}")
 
     @property
+    def highland_mode(self) -> bool | None:
+        if self.highland_mode_raw == 1:
+            return True
+        if self.highland_mode_raw == 0:
+            return False
+        return None
+
+    @property
     def auto_start_stop(self) -> bool | None:
         if self.auto_start_stop_raw == 1:
             return True
@@ -286,6 +296,8 @@ class HeaterResponse:
             "heater_setting": self.heater_setting,
             "auto_start_stop": self.auto_start_stop,
             "auto_start_stop_raw": self.auto_start_stop_raw,
+            "highland_mode": self.highland_mode,
+            "highland_mode_raw": self.highland_mode_raw,
             "high_altitude_raw": self.high_altitude_raw,
             "temperature_unit": self.temperature_unit,
             "temperature_unit_raw": self.temperature_unit_raw,
@@ -810,11 +822,11 @@ async def run_daemon(
                 await write_response(writer, b"OK: hcalory_auto_toggle\n")
                 return
 
-            if experimental_cmd == "hcalory_altitude_toggle":
+            if experimental_cmd in ("hcalory_highland_toggle", "hcalory_altitude_toggle"):
                 if len(parts) != 1:
-                    raise ValueError("Usage: hcalory_altitude_toggle")
-                await heater.send_experimental_power_action("hcalory_alt", HCALORY_ALTITUDE_TOGGLE)
-                await write_response(writer, b"OK: hcalory_altitude_toggle\n")
+                    raise ValueError(f"Usage: {experimental_cmd}")
+                await heater.send_experimental_power_action("hcalory_highland", HCALORY_POWER_HIGHLAND_TOGGLE)
+                await write_response(writer, f"OK: {experimental_cmd}\n".encode())
                 return
 
             if experimental_cmd == "hcalory_query_altitude":

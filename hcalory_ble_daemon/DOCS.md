@@ -103,10 +103,15 @@ hcalory_set_temp <32..104> fahrenheit
 hcalory_set_unit <celsius|fahrenheit>
 hcalory_set_mode <gear|thermostat>
 hcalory_auto_toggle
-hcalory_altitude_toggle
+hcalory_highland_toggle
+hcalory_altitude_toggle  # compatibility alias for hcalory_highland_toggle
 hcalory_query_altitude
 hcalory_set_altitude <meters>
 ```
+
+`hcalory_highland_toggle` sends the heater's Highland mode toggle command. The
+daemon reports the current decoded state as `highland_mode` in `pump_data`;
+`high_altitude_raw` is kept as a compatibility alias for `highland_mode_raw`.
 
 The existing stable commands such as `start_heat`, `stop_heat`, `up`, `down`,
 `gear`, `thermostat`, and `ventilation` are unchanged.

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.10
+
+- Add `hcalory_highland_toggle` as the explicit socket command for Highland mode.
+- Keep `hcalory_altitude_toggle` as a compatibility alias.
+- Decode `highland_mode` and `highland_mode_raw` from `pump_data`.
+
 ## 0.1.9
 
 - Add experimental altitude query and set-altitude socket commands.
