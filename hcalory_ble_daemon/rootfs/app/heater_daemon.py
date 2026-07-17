@@ -62,6 +62,7 @@ class SocketCommand(str, enum.Enum):
 
 class HeaterState(int, ListableEnum):
     off = 0
+    standby = 1
     cooldown = 65
     cooldown_starting = 67
     cooldown_received = 69

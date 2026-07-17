@@ -1,5 +1,5 @@
 name: HCalory BLE Daemon
-version: "0.1.1"
+version: "0.1.2"
 slug: hcalory_ble_daemon
 description: Persistent BLE daemon for HCalory diesel heaters
 url: https://github.com/davfiala/hcalory-ha-daemon
