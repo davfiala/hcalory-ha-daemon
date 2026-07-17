@@ -1,7 +1,7 @@
 FROM ghcr.io/home-assistant/base:latest
 
-ARG BUILD_VERSION
-ARG BUILD_ARCH
+ARG BUILD_VERSION=dev
+ARG BUILD_ARCH=multiarch
 
 LABEL \
   io.hass.name="HCalory BLE Daemon" \

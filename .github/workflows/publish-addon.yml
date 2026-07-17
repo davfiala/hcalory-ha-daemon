@@ -1,0 +1,68 @@
+name: Publish add-on image
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/publish-addon.yml"
+      - "hcalory_ble_daemon/**"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}/hcalory-ble-daemon
+
+jobs:
+  publish:
+    name: Build and publish add-on image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Read add-on version
+        id: addon
+        shell: bash
+        run: |
+          version="$(grep '^version:' hcalory_ble_daemon/config.yaml | sed -E 's/version:[[:space:]]*"([^"]+)"/\1/')"
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ./hcalory_ble_daemon
+          file: ./hcalory_ble_daemon/Dockerfile
+          platforms: linux/amd64,linux/386,linux/arm64,linux/arm/v7,linux/arm/v6
+          push: true
+          build-args: |
+            BUILD_VERSION=${{ steps.addon.outputs.version }}
+            BUILD_ARCH=multiarch
+          labels: |
+            io.hass.name=HCalory BLE Daemon
+            io.hass.description=Persistent BLE daemon for HCalory diesel heaters
+            io.hass.type=addon
+            io.hass.version=${{ steps.addon.outputs.version }}
+            io.hass.arch=amd64|i386|aarch64|armv7|armhf
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.licenses=LGPL-3.0-or-later
+          tags: |
+            ${{ env.IMAGE_NAME }}:${{ steps.addon.outputs.version }}
+            ${{ env.IMAGE_NAME }}:latest

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.3
+
+- Publish the add-on as a pre-built GHCR image instead of relying only on local Supervisor builds.
+
 ## 0.1.2
 
 - Recognize heater state value `1` as `standby`.
