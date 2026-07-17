@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4
+
+- Remove unsupported `armhf`/`linux/arm/v6` image build target from GHCR publishing.
+
 ## 0.1.3
 
 - Publish the add-on as a pre-built GHCR image instead of relying only on local Supervisor builds.
