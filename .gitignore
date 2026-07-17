@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local comparison clones, not part of this project.
+upstream_hcalory_control/
+upstream_hcalory_ble/

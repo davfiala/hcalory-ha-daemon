@@ -1,0 +1,49 @@
+﻿name: HCalory BLE Daemon
+version: "0.1.0"
+slug: hcalory_ble_daemon
+description: Persistent BLE daemon for HCalory diesel heaters
+url: https://github.com/davfiala/hcalory-ha-daemon
+arch:
+  - aarch64
+  - amd64
+  - armhf
+  - armv7
+  - i386
+startup: services
+boot: auto
+init: false
+host_network: true
+host_dbus: true
+usb: true
+udev: true
+privileged:
+  - NET_ADMIN
+  - NET_RAW
+map:
+  - type: homeassistant_config
+    read_only: false
+    path: /config
+options:
+  address: null
+  socket_dir: /config/hcalory
+  interval: 2.0
+  connect_attempts: 3
+  bluetooth_timeout: 8.0
+  scan_timeout: 5.0
+  read_timeout: 5.0
+  reconnect_backoff: 5.0
+  reconnect_backoff_max: 60.0
+  not_found_backoff_max: 10.0
+  debug: false
+schema:
+  address: str
+  socket_dir: str
+  interval: float(0.5,)
+  connect_attempts: int(1,20)
+  bluetooth_timeout: float(1,)
+  scan_timeout: float(1,)
+  read_timeout: float(1,)
+  reconnect_backoff: float(1,)
+  reconnect_backoff_max: float(1,)
+  not_found_backoff_max: float(1,)
+  debug: bool

@@ -1,0 +1,34 @@
+configuration:
+  address:
+    name: Heater Bluetooth address
+    description: MAC address of the HCalory heater, for example EC:B1:B6:05:FB:2A.
+  socket_dir:
+    name: Socket directory
+    description: Directory where the daemon creates its UNIX socket.
+  interval:
+    name: Poll interval
+    description: Seconds between regular pump_data polling attempts.
+  connect_attempts:
+    name: Connect attempts
+    description: BLE connection attempts per polling cycle.
+  bluetooth_timeout:
+    name: Bluetooth timeout
+    description: Timeout in seconds for each BLE connection attempt.
+  scan_timeout:
+    name: Scan timeout
+    description: Timeout in seconds before the heater is treated as not found.
+  read_timeout:
+    name: Read timeout
+    description: Timeout in seconds while waiting for a pump_data response.
+  reconnect_backoff:
+    name: Reconnect backoff
+    description: Initial delay after a failed polling or connection attempt.
+  reconnect_backoff_max:
+    name: Maximum reconnect backoff
+    description: Maximum delay after repeated polling failures.
+  not_found_backoff_max:
+    name: Maximum not-found backoff
+    description: Maximum delay when the heater is disconnected or not advertising.
+  debug:
+    name: Debug logging
+    description: Enable verbose daemon logging.
