@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.11
+
+- Add precise voltage fields: `voltage_raw` and `voltage_v`.
+- Include `protocol_version` in `pump_data` and log the active parser version on daemon start.
+- Remove unverified altitude query/set commands and the old `hcalory_altitude_toggle` alias.
+- Keep the confirmed `hcalory_highland_toggle` command and decoded `highland_mode` field.
+
 ## 0.1.10
 
 - Add `hcalory_highland_toggle` as the explicit socket command for Highland mode.

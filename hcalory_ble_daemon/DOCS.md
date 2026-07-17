@@ -90,11 +90,11 @@ The add-on needs access to the host Bluetooth stack through D-Bus and network
 capabilities. This is why the add-on requests `host_dbus`, `NET_ADMIN`, and
 `NET_RAW`.
 
-## Experimental socket commands
+## HCalory socket commands
 
-The daemon also accepts a few experimental Hcalory-specific commands. They use
-the same UNIX socket as the stable commands and are intended for manual testing
-before they become normal Home Assistant entities.
+The daemon also accepts HCalory-specific commands that use the same UNIX socket
+as the standard `start_heat`, `stop_heat`, `up`, `down`, `gear`, `thermostat`,
+and `ventilation` commands.
 
 ```text
 hcalory_set_gear <1..10>
@@ -104,17 +104,15 @@ hcalory_set_unit <celsius|fahrenheit>
 hcalory_set_mode <gear|thermostat>
 hcalory_auto_toggle
 hcalory_highland_toggle
-hcalory_altitude_toggle  # compatibility alias for hcalory_highland_toggle
-hcalory_query_altitude
-hcalory_set_altitude <meters>
 ```
 
 `hcalory_highland_toggle` sends the heater's Highland mode toggle command. The
-daemon reports the current decoded state as `highland_mode` in `pump_data`;
-`high_altitude_raw` is kept as a compatibility alias for `highland_mode_raw`.
+daemon reports the current decoded state as `highland_mode` and
+`highland_mode_raw` in `pump_data`.
 
-The existing stable commands such as `start_heat`, `stop_heat`, `up`, `down`,
-`gear`, `thermostat`, and `ventilation` are unchanged.
+`pump_data` includes `voltage` for compatibility, plus the more precise
+`voltage_v` decimal value and `voltage_raw` byte from the heater frame. It also
+includes `protocol_version`, which is logged when the daemon starts.
 
 ## Troubleshooting
 
