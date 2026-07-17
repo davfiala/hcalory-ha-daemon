@@ -18,7 +18,8 @@ RUN apk add --no-cache \
 
 RUN python3 -m pip install --break-system-packages --no-cache-dir \
     "bleak<1.0.0" \
-    "bleak-retry-connector<4.0"
+    "bleak-retry-connector<4.0" \
+    "bluetooth-adapters<1.0.0"
 
 COPY rootfs /
 COPY run.sh /run.sh
