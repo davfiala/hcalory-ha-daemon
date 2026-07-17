@@ -1,0 +1,34 @@
+configuration:
+  address:
+    name: Bluetooth adresa topení
+    description: Bluetooth MAC adresa topení HCalory, například EC:B1:B6:05:FB:2A. Daemon podle ní topení vyhledává a připojuje se k němu; bez vyplněné adresy se add-on nespustí.
+  socket_dir:
+    name: Adresář socketu
+    description: Adresář, ve kterém daemon vytvoří UNIX socket pro doprovodnou integraci Home Assistanta. Výchozí /config/hcalory je doporučený, protože je dostupný z Home Assistanta.
+  interval:
+    name: Interval dotazování
+    description: Počet sekund mezi pravidelnými dotazy pump_data, když je topení dostupné. Nižší hodnota rychleji aktualizuje entity, ale vytváří více BLE provozu; 2 sekundy jsou dobrý výchozí stav.
+  connect_attempts:
+    name: Počet pokusů o připojení
+    description: Kolik BLE pokusů o připojení daemon provede v jednom reconnect cyklu. Zvyšujte jen při slabším signálu nebo pomalém modulu, protože neúspěšný cyklus pak trvá déle.
+  bluetooth_timeout:
+    name: Timeout Bluetooth připojení
+    description: Timeout v sekundách pro jeden BLE pokus o připojení. Vyšší hodnotu použijte jen tehdy, když je topení blízko, ale pravidelně přijímá připojení pomalu.
+  scan_timeout:
+    name: Timeout vyhledávání
+    description: Jak dlouho daemon hledá topení, než ho označí jako nenalezené. Kratší hodnota pomáhá rychleji opakovat pokusy po zapnutí napájení topení.
+  read_timeout:
+    name: Timeout odpovědi
+    description: Timeout v sekundách při čekání na odpověď po odeslání pump_data nebo ovládacího příkazu. Zvyšujte jen tehdy, když jsou odpovědi platné, ale pravidelně opožděné.
+  reconnect_backoff:
+    name: Počáteční prodleva reconnectu
+    description: Počáteční prodleva po selhání pollingu nebo připojení. Při opakovaných chybách se prodleva postupně navyšuje až po nastavené maximum.
+  reconnect_backoff_max:
+    name: Maximální prodleva reconnectu
+    description: Maximální prodleva po opakovaných chybách, které nejsou jen prostý stav "topení nenalezeno". Vyšší hodnota šetří pokusy, nižší hodnota obnoví spojení dříve.
+  not_found_backoff_max:
+    name: Maximální prodleva při nenalezení
+    description: Maximální prodleva, když je topení vypnuté, odpojené nebo neinzeruje přes BLE. Nechte ji spíš nízkou, pokud chcete rychlé znovupřipojení po obnovení napájení.
+  debug:
+    name: Ladicí logování
+    description: Zapne podrobné logy se socket příkazy, raw rámci a cachovanými odpověďmi. Pro běžný provoz nechte vypnuté, aby logy a paměť zbytečně nerostly.

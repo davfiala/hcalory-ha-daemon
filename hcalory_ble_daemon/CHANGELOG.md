@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.6
+
+- Expand add-on documentation with setup steps, socket path guidance, and troubleshooting notes.
+- Add more detailed configuration descriptions for the Home Assistant add-on settings page.
+- Add Czech configuration translations.
+
 ## 0.1.5
 
 - Limit pre-built GHCR image publishing to `amd64` and `aarch64`, matching the available Home Assistant base image platforms.

@@ -1,34 +1,34 @@
 configuration:
   address:
     name: Heater Bluetooth address
-    description: MAC address of the HCalory heater, for example EC:B1:B6:05:FB:2A.
+    description: Bluetooth MAC address of the HCalory heater, for example EC:B1:B6:05:FB:2A. The daemon uses this address to find and connect to the heater; the add-on will not start until it is filled in.
   socket_dir:
     name: Socket directory
-    description: Directory where the daemon creates its UNIX socket.
+    description: Directory where the daemon creates its UNIX socket for the Home Assistant companion integration. The default /config/hcalory is recommended because it is visible from Home Assistant.
   interval:
     name: Poll interval
-    description: Seconds between regular pump_data polling attempts.
+    description: Seconds between regular pump_data polling attempts while the heater is reachable. Lower values update entities faster but create more BLE traffic; 2 seconds is a good default.
   connect_attempts:
     name: Connect attempts
-    description: BLE connection attempts per polling cycle.
+    description: Number of BLE connection attempts in one reconnect cycle. Increase only if the signal is weak or the heater often needs multiple attempts, because every failed cycle takes longer.
   bluetooth_timeout:
     name: Bluetooth timeout
-    description: Timeout in seconds for each BLE connection attempt.
+    description: Timeout in seconds for each BLE connection attempt. Use a higher value only when the heater is nearby but consistently slow to accept a connection.
   scan_timeout:
     name: Scan timeout
-    description: Timeout in seconds before the heater is treated as not found.
+    description: How long the daemon scans for the heater before reporting it as not found. A shorter value helps recover quickly after the heater is powered on again.
   read_timeout:
     name: Read timeout
-    description: Timeout in seconds while waiting for a pump_data response.
+    description: Timeout in seconds while waiting for a response after sending pump_data or a control command. Increase only if valid responses are regularly delayed.
   reconnect_backoff:
     name: Reconnect backoff
-    description: Initial delay after a failed polling or connection attempt.
+    description: Initial retry delay after a failed polling or connection attempt. The delay grows after repeated failures until it reaches the configured maximum.
   reconnect_backoff_max:
     name: Maximum reconnect backoff
-    description: Maximum delay after repeated polling failures.
+    description: Maximum retry delay after repeated failures that are not simply "heater not found". Higher values reduce retries, lower values recover sooner.
   not_found_backoff_max:
     name: Maximum not-found backoff
-    description: Maximum delay when the heater is disconnected or not advertising.
+    description: Maximum retry delay when the heater is powered off, disconnected, or not advertising. Keep this relatively low if you want fast reconnects after power is restored.
   debug:
     name: Debug logging
-    description: Enable verbose daemon logging.
+    description: Enable verbose logs with socket commands, raw frames, and cached responses. Leave disabled for normal use to keep logs and memory usage low.
