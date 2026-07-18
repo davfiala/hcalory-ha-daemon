@@ -1,0 +1,12 @@
+{
+  "domain": "hcalory_ble",
+  "name": "HCalory BLE",
+  "version": "0.2.0",
+  "documentation": "https://github.com/davfiala/hcalory-ha-daemon",
+  "issue_tracker": "https://github.com/davfiala/hcalory-ha-daemon/issues",
+  "codeowners": ["@davfiala"],
+  "requirements": [],
+  "dependencies": [],
+  "config_flow": true,
+  "iot_class": "local_polling"
+}

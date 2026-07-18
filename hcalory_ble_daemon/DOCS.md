@@ -5,6 +5,11 @@ It keeps Bluetooth handling outside the Home Assistant integration, maintains a
 cached `pump_data` response, and exposes a UNIX socket that the integration can
 query without repeatedly reconnecting to the heater.
 
+> First release note: this add-on is an early release built around one tested
+> HCalory BLE heater/protocol variant. It may have bugs and may need protocol
+> adjustments for other heaters sold under similar names. Test locally before
+> relying on unattended heating control.
+
 ## What it provides
 
 - One long-running BLE polling loop for the heater.
@@ -92,17 +97,23 @@ capabilities. This is why the add-on requests `host_dbus`, `NET_ADMIN`, and
 
 ## HCalory socket commands
 
-The daemon also accepts HCalory-specific commands that use the same UNIX socket
-as the standard `start_heat`, `stop_heat`, `up`, `down`, `gear`, `thermostat`,
-and `ventilation` commands.
+The daemon accepts a small line-based command set over the same UNIX socket used
+by the companion integration.
+
+Standard commands:
 
 ```text
-hcalory_set_gear <1..10>
-hcalory_set_temp <0..40> [celsius]
-hcalory_set_temp <32..104> fahrenheit
-hcalory_set_unit <celsius|fahrenheit>
-hcalory_set_mode <gear|thermostat>
-hcalory_auto_toggle
+daemon_status
+heater_status
+pump_data
+pump_data_force
+start_heat
+stop_heat
+up
+down
+gear
+thermostat
+ventilation
 hcalory_highland_toggle
 ```
 
@@ -112,7 +123,39 @@ daemon reports the current decoded state as `highland_mode` and
 
 `pump_data` includes `voltage` for compatibility, plus the more precise
 `voltage_v` decimal value and `voltage_raw` byte from the heater frame. It also
-includes `protocol_version`, which is logged when the daemon starts.
+includes `protocol_version`, which is logged when the daemon starts. The current
+first-release parser reports `hcalory-power-v1_0_12`.
+
+The daemon also parses `error_code` from the heater frame. A value of `0` means
+no heater-side error is currently reported. Non-zero values correspond to
+heater error codes shown by apps/controllers as `E-01`, `E-02`, and so on.
+This is different from daemon `last_error`, which describes communication or
+runtime errors in the daemon itself.
+
+Known heater error meanings:
+
+| Code | Meaning |
+| --- | --- |
+| `E-01` | General error |
+| `E-02` | Low / high voltage |
+| `E-03` | Glow plug |
+| `E-04` | Fuel pump |
+| `E-05` | Overheat |
+| `E-06` | Fan |
+| `E-07` | Communication |
+| `E-08` | No fuel / flame-out |
+| `E-09` | Sensor |
+| `E-10` | Ignition failure |
+
+## Recommended control flow
+
+Use the companion integration for normal Home Assistant control. It keeps
+`Heating`, `Auto`, and `Ventilation` mutually exclusive and converts UI target
+values into paced `up`/`down` socket commands.
+
+Direct socket commands are still useful for debugging, but sending repeated
+`up`/`down` writes manually can confuse the heater BLE module if the commands
+arrive faster than the heater updates its `pump_data` state.
 
 ## Troubleshooting
 

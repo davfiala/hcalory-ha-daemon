@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HCalory BLE",
+        "description": "Connect to the HCalory BLE daemon. If you use the add-on, enter the heater address and leave the socket path empty. The default socket directory is {default_socket_dir}.",
+        "data": {
+          "address": "Heater Bluetooth address",
+          "socket_path": "Daemon socket path",
+          "poll_interval": "Poll interval"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Cannot connect to the daemon socket",
+      "missing_socket": "Enter either a socket path or a Bluetooth address"
+    },
+    "abort": {
+      "already_configured": "This daemon socket is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HCalory BLE options",
+        "data": {
+          "poll_interval": "Poll interval"
+        }
+      }
+    }
+  }
+}

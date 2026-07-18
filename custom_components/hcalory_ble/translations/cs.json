@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "HCalory BLE",
+        "description": "Pripojeni k HCalory BLE daemonu. Pokud pouzivas add-on, zadej adresu topeni a cestu k socketu nech prazdnou. Vychozi adresar socketu je {default_socket_dir}.",
+        "data": {
+          "address": "Bluetooth adresa topeni",
+          "socket_path": "Cesta k socketu daemona",
+          "poll_interval": "Interval nacitani"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Nelze se pripojit k socketu daemona",
+      "missing_socket": "Zadej cestu k socketu nebo Bluetooth adresu"
+    },
+    "abort": {
+      "already_configured": "Tento daemon socket uz je nakonfigurovany"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Nastaveni HCalory BLE",
+        "data": {
+          "poll_interval": "Interval nacitani"
+        }
+      }
+    }
+  }
+}

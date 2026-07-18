@@ -1,9 +1,18 @@
 # Changelog
 
+## 0.1.12
+
+- Mark the project as an early first release with known scope and caveats.
+- Document the add-on, HACS integration, exclusive control modes, Auto workflow,
+  and paced requested-setting convergence.
+- Document heater-side error codes and expose their meanings through the
+  companion integration/card.
+- Report the full parser version as `hcalory-power-v1_0_12`.
+
 ## 0.1.11
 
 - Add precise voltage fields: `voltage_raw` and `voltage_v`.
-- Include `protocol_version` in `pump_data` and log the active parser version on daemon start.
+- Include full `protocol_version` in `pump_data` and log the active parser version on daemon start.
 - Remove unverified altitude query/set commands and the old `hcalory_altitude_toggle` alias.
 - Keep the confirmed `hcalory_highland_toggle` command and decoded `highland_mode` field.
 

@@ -2,6 +2,11 @@
 
 Persistent Bluetooth daemon for HCalory diesel heaters in Home Assistant.
 
+This first release provides working basic heater control, ventilation mode,
+Highland mode, status polling, and a socket interface for the companion
+Home Assistant integration. It may still have bugs and has been tested against
+one known HCalory BLE heater/protocol variant.
+
 The add-on keeps a single BLE connection and polling loop alive, then exposes
 the current heater state through a UNIX socket. The companion Home Assistant
 integration can read from that socket quickly without opening a new Bluetooth
